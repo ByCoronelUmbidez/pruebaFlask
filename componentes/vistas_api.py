@@ -7,6 +7,9 @@ from componentes.modelos import Cuenta
 from componentes.modelos import Usuario
 from componentes.modelos import con
 from flask import request
+from flask import render_template
+from flask import redirect
+from flask import url_for
 import bcrypt
 
 
@@ -133,3 +136,18 @@ def login():
             return jsonify({'mensaje': 'Credenciales inválidas'}), 401
     else:
         return jsonify({'mensaje': 'Credenciales inválidas'}), 401
+    
+    
+@app.route('/eliminar_usuario/<int:id>', methods=['POST'])
+def eliminar_usuario(id):
+    resultado = Usuario.eliminar(id)
+    if resultado == 'Eliminación exitosa.':
+        return redirect(url_for('listar_usuarios'))
+    else:
+        return 'No se pudo eliminar el registro.'
+
+@app.route('/listar_usuarios')
+def listar_usuarios():
+    # Aquí podrías implementar la lógica para obtener y mostrar la lista de usuarios
+    usuarios = Usuario.obtener()  # Método hipotético para obtener todos los usuarios
+    return render_template('lista_usuarios.html', usuarios=usuarios)

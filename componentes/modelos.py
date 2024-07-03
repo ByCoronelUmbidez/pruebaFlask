@@ -74,18 +74,57 @@ class Usuario(Tabla):
     @staticmethod
     def verificar_password(password_ingresada, password_almacenada):
         return bcrypt.checkpw(password_ingresada.encode('utf-8'), password_almacenada.encode('utf-8'))
-
-    # @classmethod
-    # def obtener_para_login(cls, username):
-    #     consulta = f"SELECT * FROM {cls.tabla} WHERE username = %s"
-    #     with cls.conexion.cursor() as cursor:
-    #         cursor.execute(consulta, (username,))
-    #         resultado = cursor.fetchone()
-    #         if resultado:
-    #             return cls(*resultado, de_bbdd=True)
-    #         return None 
-
+    
+    @classmethod
+    def eliminar(cls, id):
+        consulta = "DELETE FROM {tabla} WHERE id = %s".format(tabla=cls.tabla)
+        rta_db = cls.__conectar(consulta, (id,))
         
+        if rta_db:
+            return 'Eliminación exitosa.'
+            
+        return 'No se pudo eliminar el registro.'
+
+    @classmethod        
+    def __conectar(cls, consulta, datos=None):
+        
+        try:
+            cursor = cls.conexion.cursor()
+        except Exception as e:
+            cls.conexion.connect()
+            cursor = cls.conexion.cursor()
+        
+        if consulta.startswith('SELECT'): # si empieza la consulta con SELECT quiere decir que me va a traer algo de la db. Entonces empiezo a analizar si vienen o no datos.
+            
+            if datos is not None:
+                cursor.execute(consulta, datos)
+            else:
+                cursor.execute(consulta)
+                
+            rta_db = cursor.fetchall()
+            
+            if rta_db != []:
+                resultado = [cls(registro, de_bbdd=True) for registro in rta_db]
+                if len(resultado) == 1:
+                    resultado = resultado[0]
+            else:
+                resultado = False                       
+            
+            cls.conexion.close()
+        
+        else: # Si no hago un SELECT ... 
+            
+            try:
+                # Crud-Update-Delete puede salir mal con esto lo contengo, agarro el error
+                cursor.execute(consulta, datos)
+                cls.conexion.commit()    
+                cls.conexion.close()
+                resultado = True
+            except Exception as e:
+                resultado = False
+            
+        return resultado
+           
         
 class Cuenta(Tabla):
     

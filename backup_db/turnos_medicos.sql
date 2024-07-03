@@ -67,32 +67,6 @@ INSERT INTO `profesionales` VALUES (1,'Dr. Juan Pérez','Cardiología','Lunes y 
 UNLOCK TABLES;
 
 --
--- Table structure for table `profesionalsede`
---
-
-DROP TABLE IF EXISTS `profesionalsede`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `profesionalsede` (
-  `id_profesional` int(11) NOT NULL,
-  `id_sede` int(11) NOT NULL,
-  PRIMARY KEY (`id_profesional`,`id_sede`),
-  KEY `id_sede` (`id_sede`),
-  CONSTRAINT `profesionalsede_ibfk_1` FOREIGN KEY (`id_profesional`) REFERENCES `profesionales` (`id`),
-  CONSTRAINT `profesionalsede_ibfk_2` FOREIGN KEY (`id_sede`) REFERENCES `sedes` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `profesionalsede`
---
-
-LOCK TABLES `profesionalsede` WRITE;
-/*!40000 ALTER TABLE `profesionalsede` DISABLE KEYS */;
-/*!40000 ALTER TABLE `profesionalsede` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
 -- Table structure for table `sedes`
 --
 
@@ -115,7 +89,7 @@ CREATE TABLE `sedes` (
 
 LOCK TABLES `sedes` WRITE;
 /*!40000 ALTER TABLE `sedes` DISABLE KEYS */;
-INSERT INTO `sedes` VALUES (1,'Sede Central','Calle Principal 123','','(123) 456-7890'),(2,'Sucursal Norte','Avenida Norte 456','','(987) 654-3210');
+INSERT INTO `sedes` VALUES (1,'Sede Central','Calle Principal 123','Lunes a Viernes, 8:00-18:00','(123) 456-7890'),(2,'Sucursal Norte','Avenida Norte 456','Lunes a Viernes, 8:00-18:00','(987) 654-3210');
 /*!40000 ALTER TABLE `sedes` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -172,7 +146,7 @@ CREATE TABLE `usuarios` (
   UNIQUE KEY `username` (`username`),
   KEY `id_usuario` (`id_usuario`),
   CONSTRAINT `usuarios_ibfk_1` FOREIGN KEY (`id_usuario`) REFERENCES `usuarios` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -181,6 +155,7 @@ CREATE TABLE `usuarios` (
 
 LOCK TABLES `usuarios` WRITE;
 /*!40000 ALTER TABLE `usuarios` DISABLE KEYS */;
+INSERT INTO `usuarios` VALUES (1,'By','scrypt:32768:8:1$3xJPVFrOHPyPtZRD$c5fce8b025468bff26ddaf91e4dfebfca639bf82a18a220772ec980901a0bef3dd5f73d219e0eec86f3909f592ddef14b4f2bdf467bc02647b515c627d65e941','BCU','bcu@prueba.com',NULL),(2,'Barby','scrypt:32768:8:1$lK7zNp8gnW3uNWab$1b07d72b54bb3589d638924933e3bee93402a58763d0ba6c4bfcf86c773c497951c24751c358bdff021c3c68f020671e881e217e4104682795acbda176517154','Barby CU','bcu2@prueba.com',NULL),(3,'Picco','12430b59ba4966a0106954fdf5e426b1f56a58a9','Piccoro','pico@prueba.com',NULL),(4,'Vegue','$2b$12$rMOdGtrwlY6fcMbkdM.LwuyJ95BsGfWP7h.D5pTXHLOxr5O3Mq1XW','Veguetta','vegue@prueba.com',NULL),(6,'Igna','$2b$12$ZYPGuBfThZrTNvKeTVfN5eAdkfPE1bQ80ofJcaV8Gotr1Li84xKzi','Ignacio','igna@prueba.com',NULL),(7,'Amy','$2b$12$ArKzZKijU.yRMRMISllA4OGk15G8bZ7FU0kr/X3sv8SbeoMT8jJU6','Amy','amy@prueba.com',NULL);
 /*!40000 ALTER TABLE `usuarios` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
@@ -193,4 +168,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2024-06-30 17:39:43
+-- Dump completed on 2024-07-03 16:23:38
