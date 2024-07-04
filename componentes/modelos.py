@@ -71,9 +71,9 @@ class Usuario(Tabla):
     def encriptar(password):
         return bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
 
-    @staticmethod
-    def verificar_password(password_ingresada, password_almacenada):
-        return bcrypt.checkpw(password_ingresada.encode('utf-8'), password_almacenada.encode('utf-8'))
+    # @staticmethod
+    # def verificar_password(password_ingresada, password_almacenada):
+    #     return bcrypt.checkpw(password_ingresada.encode('utf-8'), password_almacenada.encode('utf-8'))
     
     @classmethod
     def eliminar(cls, id):
@@ -124,7 +124,21 @@ class Usuario(Tabla):
                 resultado = False
             
         return resultado
-           
+    
+    @classmethod
+    def obtener_todos(cls):
+        consulta = f"SELECT * FROM {cls.tabla};"
+        resultados = cls.__conectar(consulta)
+        return resultados
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'username': self.username,
+            'nombre': self.nombre,
+            'email': self.email
+            # Agrega más campos si es necesario
+        }      
         
 class Cuenta(Tabla):
     

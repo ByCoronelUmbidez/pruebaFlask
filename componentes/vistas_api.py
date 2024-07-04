@@ -70,13 +70,13 @@ def registro():
         return jsonify({'error': 'Datos incompletos'}), 400
 
     # Encriptar la contraseña antes de crear el nuevo usuario
-    password_encriptada = Usuario.encriptar(datos['password'])
-    print(password_encriptada)
+    # password_encriptada = Usuario.encriptar(datos['password'])
+    # print(password_encriptada)
 
     # Crear un nuevo usuario en la base de datos
     nuevo_usuario = Usuario(
         username=datos['username'],
-        password=password_encriptada,
+        password=datos['password'],
         nombre=datos['nombre'],
         email=datos['email']
     )
@@ -111,9 +111,10 @@ def login():
         return jsonify({'mensaje': 'Falta nombre de usuario o contraseña'}), 400
 
     usuario = Usuario.obtener_para_login(username)
+    print(usuario)
     
-    ingresada_codificada = bcrypt.checkpw(password.encode('utf-8'), usuario.password.encode('utf-8'))
-    print(ingresada_codificada)
+    # ingresada_codificada = Usuario.encriptar(password)
+    # print(ingresada_codificada)
     
     if usuario:
         print(f"Contraseña almacenada en la base de datos: {usuario.password}")  # Se imprime la contraseña almacenada (hash) para fines de debug (no se debe mostrar en producción)
@@ -121,13 +122,13 @@ def login():
         # **Revisar la implementación de bcrypt.checkpw()**
 
         # 1. Codificar las contraseñas a utf-8
-        contrasena_ingresada_bytes = password.encode('utf-8')
-        print(contrasena_ingresada_bytes)
-        contrasena_almacenada_bytes = usuario.password.encode('utf-8')
-        print(contrasena_almacenada_bytes)
+        # contrasena_ingresada_bytes = password.encode('utf-8')
+        # print(contrasena_ingresada_bytes)
+        # contrasena_almacenada_bytes = usuario.password.encode('utf-8')
+        # print(contrasena_almacenada_bytes)
 
         # 2. Verificar los argumentos de bcrypt.checkpw()
-        es_valida = bcrypt.checkpw(contrasena_ingresada_bytes, contrasena_almacenada_bytes)
+        es_valida = usuario.password == password
 
         # 3. Revisar errores de sintaxis o lógica
         if es_valida:
@@ -146,8 +147,11 @@ def eliminar_usuario(id):
     else:
         return 'No se pudo eliminar el registro.'
 
-@app.route('/listar_usuarios')
+@app.route('/api/listar_usuarios', methods=['GET'])
 def listar_usuarios():
-    # Aquí podrías implementar la lógica para obtener y mostrar la lista de usuarios
-    usuarios = Usuario.obtener()  # Método hipotético para obtener todos los usuarios
-    return render_template('lista_usuarios.html', usuarios=usuarios)
+    usuarios = Usuario.obtener_todos()  # Método hipotético para obtener todos los usuarios
+
+    # Convertir los objetos de usuarios a una lista de diccionarios
+    usuarios_serializados = [usuario.to_dict() for usuario in usuarios]
+
+    return jsonify(usuarios_serializados)

@@ -24,8 +24,8 @@ class Tabla:
         
         datos = tuple(getattr(self, campo) for campo in self.campos[1:])  # Excluido el 'id'
         
-        cursor = self.conexion.cursor()
-        try:
+        try:           
+            cursor = self.conexion.cursor()
             cursor.execute(consulta, datos)
             self.conexion.commit()
             cursor.close()
@@ -116,18 +116,7 @@ class Tabla:
                 if len(resultado) == 1:
                     resultado = resultado[0]
             else:
-                resultado = False   
-            
-            # rta_db = cursor.fetchall() # guardo lo que vino de la db y me pregunto si vino vacio o no, tengo resultado?
-            
-            # if rta_db != []:
-            #     resultado = [cls(registro, de_bbdd=True) for registro in rta_db]
-            #                     #si vino de la db va a ser TRUE de_bbdd=True
-            #     if len(resultado) == 1:
-            #         resultado = resultado[0] # si vino un valor solo, voy a devolver ese valor solo, no una colección
-                    
-            # else:
-            #     resultado = False          
+                resultado = False          
             
             cls.conexion.close()
         
