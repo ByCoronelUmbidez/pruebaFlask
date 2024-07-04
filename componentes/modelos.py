@@ -56,7 +56,7 @@ class Usuario(Tabla):
         if not de_bbdd:
             usuario = {
                 'username': kwargs.get('username'),
-                'password': self.encriptar(kwargs.get('password')),  # Aquí se encripta la contraseña
+                'password': kwargs.get('password'),  # Aquí se encripta la contraseña
                 'nombre': kwargs.get('nombre'),
                 'email': kwargs.get('email'),
                 'id_usuario': kwargs.get('id_usuario', None)  # Opcional
@@ -67,9 +67,9 @@ class Usuario(Tabla):
             super().__init__(self.tabla, self.conexion, self.campos)
             self.crear(args, de_bbdd)
     
-    @staticmethod
-    def encriptar(password):
-        return bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+    # @staticmethod
+    # def encriptar(password):
+    #     return bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
 
     # @staticmethod
     # def verificar_password(password_ingresada, password_almacenada):

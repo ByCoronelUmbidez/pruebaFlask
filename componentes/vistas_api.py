@@ -25,39 +25,39 @@ def mostrar_sedes():
     dicc_sedes = [sede.__dict__ for sede in sedes]
     return jsonify(dicc_sedes)
 
-@app.route('/api/profesionales_sedes', methods=['GET'])
-def mostrar_profesionales_sedes():
-    profesionales_sedes = ProfesionalSede.obtener()
-    datos = [ps.__dict__ for ps in profesionales_sedes]
-    return jsonify(datos)
+# @app.route('/api/profesionales_sedes', methods=['GET'])
+# def mostrar_profesionales_sedes():
+#     profesionales_sedes = ProfesionalSede.obtener()
+#     datos = [ps.__dict__ for ps in profesionales_sedes]
+#     return jsonify(datos)
 
-@app.route("/api/perfil", methods=['POST'])
-def buscar_turno():
+# @app.route("/api/perfil", methods=['POST'])
+# def buscar_turno():
     
-    if request.method == 'POST':
-        datos = request.json["datos"]
-        cuenta = Cuenta.obtener('correo', datos['correo'])
-        perfil = Usuario.obtener('id_cuenta', cuenta.id)
+#     if request.method == 'POST':
+#         datos = request.json["datos"]
+#         cuenta = Cuenta.obtener('correo', datos['correo'])
+#         perfil = Usuario.obtener('id_cuenta', cuenta.id)
     
-        if not perfil:
-            turno_nuevo = Usuario(
-                cuenta.id,
-                datos['username'],
-                datos['nombre'],
-                datos['email'],
-            )
-            turno_nuevo = turno_nuevo.guardar_db()
-            respuesta = {'mensaje': turno_nuevo}
-        else:
-            del datos['lenguajes']
-            del datos['correo']
-            datos['id'] = cuenta.id
-            Usuario_modif = Usuario.modificar(datos)
-            respuesta = {'mensaje': Usuario_modif}
-    else:
-        respuesta = {'mensaje': 'no se recibieron datos.'}
+#         if not perfil:
+#             turno_nuevo = Usuario(
+#                 cuenta.id,
+#                 datos['username'],
+#                 datos['nombre'],
+#                 datos['email'],
+#             )
+#             turno_nuevo = turno_nuevo.guardar_db()
+#             respuesta = {'mensaje': turno_nuevo}
+#         else:
+#             del datos['lenguajes']
+#             del datos['correo']
+#             datos['id'] = cuenta.id
+#             Usuario_modif = Usuario.modificar(datos)
+#             respuesta = {'mensaje': Usuario_modif}
+#     else:
+#         respuesta = {'mensaje': 'no se recibieron datos.'}
 
-    return jsonify(respuesta)
+#     return jsonify(respuesta)
 
 
 @app.route('/api/registro', methods=['POST'])
@@ -139,13 +139,13 @@ def login():
         return jsonify({'mensaje': 'Credenciales inválidas'}), 401
     
     
-@app.route('/eliminar_usuario/<int:id>', methods=['POST'])
+@app.route('/api/eliminar_usuario/<int:id>', methods=['POST'])
 def eliminar_usuario(id):
     resultado = Usuario.eliminar(id)
     if resultado == 'Eliminación exitosa.':
-        return redirect(url_for('listar_usuarios'))
+        return jsonify({'mensaje': 'Usuario eliminado exitosamente'}), 200
     else:
-        return 'No se pudo eliminar el registro.'
+        return jsonify({'error': 'No se pudo eliminar el usuario'}), 500
 
 @app.route('/api/listar_usuarios', methods=['GET'])
 def listar_usuarios():
