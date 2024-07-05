@@ -113,31 +113,19 @@ def login():
     usuario = Usuario.obtener_para_login(username)
     print(usuario)
     
-    # ingresada_codificada = Usuario.encriptar(password)
-    # print(ingresada_codificada)
-    
     if usuario:
-        print(f"Contraseña almacenada en la base de datos: {usuario.password}")  # Se imprime la contraseña almacenada (hash) para fines de debug (no se debe mostrar en producción)
-
-        # **Revisar la implementación de bcrypt.checkpw()**
-
-        # 1. Codificar las contraseñas a utf-8
-        # contrasena_ingresada_bytes = password.encode('utf-8')
-        # print(contrasena_ingresada_bytes)
-        # contrasena_almacenada_bytes = usuario.password.encode('utf-8')
-        # print(contrasena_almacenada_bytes)
-
-        # 2. Verificar los argumentos de bcrypt.checkpw()
-        es_valida = usuario.password == password
-
-        # 3. Revisar errores de sintaxis o lógica
-        if es_valida:
+        print(f"Contraseña almacenada en la base de datos: {usuario.password}")  # PARA DEPURAR
+        
+        # Verificar la contraseña ingresada usando bcrypt
+        contrasena_ingresada = password.encode('utf-8')  # CODIFICAR LA CONTRASEÑA INGRESADA
+        
+        if bcrypt.checkpw(contrasena_ingresada, usuario.password.encode('utf-8')):
             return jsonify({'mensaje': 'Inicio de sesión exitoso'}), 200
         else:
             return jsonify({'mensaje': 'Credenciales inválidas'}), 401
     else:
         return jsonify({'mensaje': 'Credenciales inválidas'}), 401
-    
+
     
 @app.route('/eliminar_usuario/<int:id>', methods=['POST'])
 def eliminar_usuario(id):
