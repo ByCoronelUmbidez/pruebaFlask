@@ -4,7 +4,7 @@ from flask_cors import CORS
 app = Flask(__name__)
 app.json.ensure_ascii = False
 CORS(app) 
-cors = CORS(app, resources={r"/api/*": {"origins": "*"}})
+CORS(app, resources={r"/api/*": {"origins": "*"}})
 # CORS(app, resources={r"/api/*": {"origins": "http://127.0.0.1:5500"}})
 
 

@@ -33,31 +33,43 @@ def mostrar_profesionales_sedes():
 
 @app.route("/api/perfil", methods=['POST'])
 def buscar_turno():
-    
     if request.method == 'POST':
-        datos = request.json["datos"]
-        cuenta = Cuenta.obtener('correo', datos['correo'])
-        perfil = Usuario.obtener('id_cuenta', cuenta.id)
-    
-        if not perfil:
-            turno_nuevo = Usuario(
-                cuenta.id,
-                datos['username'],
-                datos['nombre'],
-                datos['email'],
-            )
-            turno_nuevo = turno_nuevo.guardar_db()
-            respuesta = {'mensaje': turno_nuevo}
+        datos = request.json.get("datos")  # Obtén los datos correctamente del JSON
+        if datos:
+            correo = datos.get('correo')
+            cuenta = Cuenta.obtener('correo', correo)
+            
+            if cuenta:
+                perfil = Usuario.obtener('id_cuenta', cuenta.id)
+                if not perfil:
+                    # Crear un nuevo usuario si no existe perfil asociado a esta cuenta
+                    nuevo_usuario = Usuario(
+                        cuenta.id,
+                        datos['username'],
+                        datos['nombre'],
+                        datos['email']
+                    )
+                    nuevo_usuario.guardar_db()
+                    respuesta = {'mensaje': 'Usuario creado exitosamente.'}
+                else:
+                    # Modificar el usuario existente
+                    datos_modificados = {
+                        'id': cuenta.id,
+                        'username': datos['username'],
+                        'nombre': datos['nombre'],
+                        'email': datos['email']
+                    }
+                    Usuario.modificar(datos_modificados)
+                    respuesta = {'mensaje': 'Usuario modificado exitosamente.'}
+            else:
+                respuesta = {'mensaje': 'No se encontró una cuenta asociada al correo proporcionado.'}
         else:
-            del datos['lenguajes']
-            del datos['correo']
-            datos['id'] = cuenta.id
-            Usuario_modif = Usuario.modificar(datos)
-            respuesta = {'mensaje': Usuario_modif}
+            respuesta = {'mensaje': 'No se recibieron datos válidos.'}
     else:
-        respuesta = {'mensaje': 'no se recibieron datos.'}
+        respuesta = {'mensaje': 'Solicitud no permitida.'}
 
     return jsonify(respuesta)
+
 
 
 @app.route('/api/registro', methods=['POST'])

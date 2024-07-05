@@ -1,157 +1,107 @@
-# Clases que corresponden a entidades en la BBDD
+# Importar las clases necesarias de SQLAlchemy
+from flask_sqlalchemy import SQLAlchemy
+from flask import Flask, request, jsonify
 
-from base_db.dml import Tabla
-from base_db.config_db import conexion as con 
-from auxiliares.cifrado import encriptar
-import hashlib
-import bcrypt
 
-class Profesional(Tabla):
-    tabla = 'profesionales'
-    campos = ('id', 'nombre', 'especialidad', 'horario')
-    conexion = con
-    
-    def __init__(self, *args, de_bbdd=False):
-        super().crear(args, de_bbdd) # --> no tiene que ser False, queda para que despues tome los datos
-        
-class Sede(Tabla):
-    tabla = 'sedes'
-    campos = ('id', 'nombre', 'direccion', 'horario_atencion', 'telefono')
-    conexion = con
-    
-    def __init__(self, *args, de_bbdd=False):
-        super().crear(args, de_bbdd)
-        
-class ProfesionalSede(Tabla):
-    tabla = 'profesionalsede'
-    campos = ('id_profesional', 'id_sede')
-    conexion = con
-    
-    def __init__(self, *args, de_bbdd=False):
-        super().crear(args, de_bbdd)     
-        
-class Contacto(Tabla):
-    tabla = 'contacto'
-    campos = ('id', 'nombre', 'email', 'mensaje')
-    conexion = con
-    
-    def __init__(self, *args, de_bbdd=False):
-        super().crear(args, de_bbdd)
-        
-class Turno(Tabla):
-    tabla = 'turnos'
-    campos = ('id', 'fecha_hora', 'id_profesional', 'id_sede', 'id_usuario')
-    conexion = con
-    
-    def __init__(self, *args, de_bbdd=False):
-        super().crear(args, de_bbdd)        
-        
-# Clase Usuario
-class Usuario(Tabla):
-    tabla = 'usuarios'
-    conexion = con
-    campos = ('id', 'username', 'password', 'nombre', 'email', 'id_usuario')
-    
-    def __init__(self, *args, de_bbdd=False, **kwargs):
-        if not de_bbdd:
-            usuario = {
-                'username': kwargs.get('username'),
-                'password': self.encriptar(kwargs.get('password')),  # Aquí se encripta la contraseña
-                'nombre': kwargs.get('nombre'),
-                'email': kwargs.get('email'),
-                'id_usuario': kwargs.get('id_usuario', None)  # Opcional
+# Instancia de SQLAlchemy
+db = SQLAlchemy()
+
+# Modelos SQLAlchemy
+
+class Profesional(db.Model):
+    __tablename__ = 'profesionales'
+
+    id = db.Column(db.Integer, primary_key=True)
+    nombre = db.Column(db.String(100), nullable=False)
+    especialidad = db.Column(db.String(100), nullable=False)
+    horario = db.Column(db.String(100), nullable=True)
+
+    # Relación con Turno (uno a muchos)
+    turnos = db.relationship('Turno', backref='profesional', lazy=True)
+
+    def __init__(self, nombre, especialidad, horario=None):
+        self.nombre = nombre
+        self.especialidad = especialidad
+        self.horario = horario
+
+class Sede(db.Model):
+    __tablename__ = 'sedes'
+
+    id = db.Column(db.Integer, primary_key=True)
+    nombre = db.Column(db.String(100), nullable=False)
+    direccion = db.Column(db.String(255), nullable=False)
+    horario_atencion = db.Column(db.String(100), nullable=True)
+    telefono = db.Column(db.String(20), nullable=True)
+
+    # Relación con Turno (uno a muchos)
+    turnos = db.relationship('Turno', backref='sede', lazy=True)
+
+    def __init__(self, nombre, direccion, horario_atencion=None, telefono=None):
+        self.nombre = nombre
+        self.direccion = direccion
+        self.horario_atencion = horario_atencion
+        self.telefono = telefono
+
+class Turno(db.Model):
+    __tablename__ = 'turnos'
+
+    id = db.Column(db.Integer, primary_key=True)
+    fecha_hora = db.Column(db.DateTime, nullable=False)
+    id_profesional = db.Column(db.Integer, db.ForeignKey('profesionales.id'), nullable=False)
+    id_sede = db.Column(db.Integer, db.ForeignKey('sedes.id'), nullable=False)
+    id_usuario = db.Column(db.Integer, db.ForeignKey('usuarios.id'), nullable=True)
+    disponible = db.Column(db.Boolean, default=True, nullable=False)
+
+    def __init__(self, fecha_hora, id_profesional, id_sede, id_usuario=None, disponible=True):
+        self.fecha_hora = fecha_hora
+        self.id_profesional = id_profesional
+        self.id_sede = id_sede
+        self.id_usuario = id_usuario
+        self.disponible = disponible
+
+# Asegura que la conexión de la aplicación Flask esté configurada correctamente
+app = Flask(__name__)
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://username:password@localhost/db_name'  # Reemplaza con tus datos
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+# Inicializa la extensión SQLAlchemy con la aplicación Flask
+db.init_app(app)
+
+# Rutas y lógica de tu aplicación Flask
+@app.route('/api/buscar_turnos', methods=['POST'])
+def buscar_turnos():
+    data = request.json
+    especialidad = data.get('especialidad')
+    sede = data.get('sede')
+
+    try:
+        # Consulta utilizando los modelos de SQLAlchemy
+        turnos = (
+            Turno.query
+            .join(Profesional)
+            .join(Sede)
+            .filter(Profesional.especialidad == especialidad,
+                    Sede.nombre == sede,
+                    Turno.disponible == True)
+            .all()
+        )
+
+        # Formateo de los resultados a JSON
+        resultados = [
+            {
+                'id': turno.id,
+                'fecha_hora': turno.fecha_hora.strftime('%Y-%m-%d %H:%M:%S'),
+                'profesional': turno.profesional.nombre,
+                'sede': turno.sede.nombre
             }
-            super().__init__(self.tabla, self.conexion, self.campos)
-            self.crear(tuple(usuario.values()), de_bbdd)
-        else:
-            super().__init__(self.tabla, self.conexion, self.campos)
-            self.crear(args, de_bbdd)
-    
-    @staticmethod
-    def encriptar(password):
-        return bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+            for turno in turnos
+        ]
 
-    # @staticmethod
-    # def verificar_password(password_ingresada, password_almacenada):
-    #     return bcrypt.checkpw(password_ingresada.encode('utf-8'), password_almacenada.encode('utf-8'))
-    
-    @classmethod
-    def eliminar(cls, id):
-        consulta = "DELETE FROM {tabla} WHERE id = %s".format(tabla=cls.tabla)
-        rta_db = cls.__conectar(consulta, (id,))
-        
-        if rta_db:
-            return 'Eliminación exitosa.'
-            
-        return 'No se pudo eliminar el registro.'
+        return jsonify(resultados)
 
-    @classmethod        
-    def __conectar(cls, consulta, datos=None):
-        
-        try:
-            cursor = cls.conexion.cursor()
-        except Exception as e:
-            cls.conexion.connect()
-            cursor = cls.conexion.cursor()
-        
-        if consulta.startswith('SELECT'): # si empieza la consulta con SELECT quiere decir que me va a traer algo de la db. Entonces empiezo a analizar si vienen o no datos.
-            
-            if datos is not None:
-                cursor.execute(consulta, datos)
-            else:
-                cursor.execute(consulta)
-                
-            rta_db = cursor.fetchall()
-            
-            if rta_db != []:
-                resultado = [cls(registro, de_bbdd=True) for registro in rta_db]
-                if len(resultado) == 1:
-                    resultado = resultado[0]
-            else:
-                resultado = False                       
-            
-            cls.conexion.close()
-        
-        else: # Si no hago un SELECT ... 
-            
-            try:
-                # Crud-Update-Delete puede salir mal con esto lo contengo, agarro el error
-                cursor.execute(consulta, datos)
-                cls.conexion.commit()    
-                cls.conexion.close()
-                resultado = True
-            except Exception as e:
-                resultado = False
-            
-        return resultado
-    
-    @classmethod
-    def obtener_todos(cls):
-        consulta = f"SELECT * FROM {cls.tabla};"
-        resultados = cls.__conectar(consulta)
-        return resultados
-    
-    def to_dict(self):
-        return {
-            'id': self.id,
-            'username': self.username,
-            'nombre': self.nombre,
-            'email': self.email
-            # Agrega más campos si es necesario
-        }      
-        
-class Cuenta(Tabla):
-    
-    tabla = 'cuenta'
-    conexion = con
-    campos = ('id', 'correo', 'clave')
-    
-    def __init__(self, *args, de_bbdd=False):
-        
-        if not de_bbdd:
-            cuenta = []
-            cuenta.append(args[0])
-            cuenta.append(encriptar(args[1]))
-            super().crear(tuple(cuenta), de_bbdd)
-        else:
-            super().crear(args, de_bbdd)                 
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+if __name__ == '__main__':
+    app.run()
+
