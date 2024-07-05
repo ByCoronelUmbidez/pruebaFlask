@@ -1,5 +1,5 @@
 from flask import jsonify
-from main import app
+from app import app
 from componentes.modelos import Profesional
 from componentes.modelos import Sede
 from componentes.modelos import Usuario
