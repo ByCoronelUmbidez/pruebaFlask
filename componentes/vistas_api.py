@@ -2,15 +2,16 @@ from flask import jsonify
 from main import app
 from componentes.modelos import Profesional
 from componentes.modelos import Sede
-from componentes.modelos import ProfesionalSede
-from componentes.modelos import Cuenta
 from componentes.modelos import Usuario
+from componentes.modelos import Turno
 from componentes.modelos import con
 from flask import request
-from flask import render_template
-from flask import redirect
-from flask import url_for
 import bcrypt
+from flask_login import login_user
+from flask_login import login_required
+from flask_login import logout_user
+from flask_login import current_user
+
 
 
 @app.route('/api/profesionales', methods=['GET'])
@@ -24,40 +25,6 @@ def mostrar_sedes():
     sedes = Sede.obtener()
     dicc_sedes = [sede.__dict__ for sede in sedes]
     return jsonify(dicc_sedes)
-
-# @app.route('/api/profesionales_sedes', methods=['GET'])
-# def mostrar_profesionales_sedes():
-#     profesionales_sedes = ProfesionalSede.obtener()
-#     datos = [ps.__dict__ for ps in profesionales_sedes]
-#     return jsonify(datos)
-
-# @app.route("/api/perfil", methods=['POST'])
-# def buscar_turno():
-    
-#     if request.method == 'POST':
-#         datos = request.json["datos"]
-#         cuenta = Cuenta.obtener('correo', datos['correo'])
-#         perfil = Usuario.obtener('id_cuenta', cuenta.id)
-    
-#         if not perfil:
-#             turno_nuevo = Usuario(
-#                 cuenta.id,
-#                 datos['username'],
-#                 datos['nombre'],
-#                 datos['email'],
-#             )
-#             turno_nuevo = turno_nuevo.guardar_db()
-#             respuesta = {'mensaje': turno_nuevo}
-#         else:
-#             del datos['lenguajes']
-#             del datos['correo']
-#             datos['id'] = cuenta.id
-#             Usuario_modif = Usuario.modificar(datos)
-#             respuesta = {'mensaje': Usuario_modif}
-#     else:
-#         respuesta = {'mensaje': 'no se recibieron datos.'}
-
-#     return jsonify(respuesta)
 
 
 @app.route('/api/registro', methods=['POST'])
@@ -155,3 +122,117 @@ def listar_usuarios():
     usuarios_serializados = [usuario.to_dict() for usuario in usuarios]
 
     return jsonify(usuarios_serializados)
+
+
+@app.route('/api/perfil', methods=['GET'])
+@login_required
+def perfil():
+    usuario = current_user
+    turnos = Turno.obtener_por_usuario(usuario.id)
+    return jsonify({
+        'id': usuario.id,
+        'username': usuario.username,
+        'nombre': usuario.nombre,
+        'email': usuario.email,
+        'turnos': turnos
+    })
+
+@app.route('/api/logout', methods=['POST'])
+@login_required
+def logout():
+    logout_user()
+    return jsonify({'mensaje': 'Sesión cerrada'})
+
+
+# Rutas para obtener datos de la base de datos usando Profesional.obtener
+@app.route('/api/especialidades', methods=['GET'])
+def api_especialidades():
+    profesionales = Profesional.obtener()
+    if not profesionales:
+        return jsonify([])  # Devolver una lista vacía si no hay profesionales
+    especialidades = set()  # Usamos un set para garantizar especialidades únicas
+    for profesional in profesionales:
+        especialidades.add(profesional.especialidad)
+
+    return jsonify(list(especialidades))
+
+
+@app.route('/api/profesionales/<especialidad>', methods=['GET'])
+def api_profesionales_por_especialidad(especialidad):
+    # Obtener todos los profesionales
+    profesionales = Profesional.obtener()
+
+    # Filtrar por especialidad si se proporciona una
+    if especialidad != 'all':
+        profesionales_filtrados = [profesional for profesional in profesionales if profesional.especialidad.lower() == especialidad.lower()]
+    else:
+        profesionales_filtrados = profesionales
+
+    # Preparar la lista de profesionales en formato JSON
+    profesionales_json = []
+    for profesional in profesionales_filtrados:
+        profesional_json = {
+            'nombre': profesional.nombre,
+            # Agrega otros campos necesarios
+        }
+        profesionales_json.append(profesional_json)
+
+    # Convertir a formato JSON y devolver
+    return jsonify(profesionales_json)
+
+
+@app.route('/api/horarios/<especialidad>', methods=['GET'])
+def api_horarios_por_profesional(especialidad):
+    profesionales = Profesional.obtener()
+
+    # Filtrar por especialidad si se proporciona una
+    if especialidad != 'all':
+        profesionales_filtrados = [profesional for profesional in profesionales if profesional.especialidad.lower() == especialidad.lower()]
+    else:
+        profesionales_filtrados = profesionales
+
+    # Preparar la lista de profesionales en formato JSON
+    profesionales_json = []
+    for profesional in profesionales_filtrados:
+        profesional_json = {
+            'horario': profesional.horario,
+            # Agrega otros campos necesarios
+        }
+        profesionales_json.append(profesional_json)
+
+    # Convertir a formato JSON y devolver
+    return jsonify(profesionales_json)    
+    
+
+@app.route('/api/sedes', methods=['GET'])
+def api_sedes():
+    sedes = Sede.obtener_sedes()
+    return jsonify(sedes)
+
+@app.route('/api/guardar_turno', methods=['POST'])
+def guardar_turno():
+    data = request.get_json()
+
+    # Aquí debes validar y guardar los datos en la tabla 'turnos'
+    especialidad = data.get('especialidad')
+    profesional = data.get('profesional')
+    horario = data.get('horario')
+    sede = data.get('sede')
+
+    # Ejemplo básico de guardar en la base de datos
+    # Puedes adaptar esto a tu implementación con MySQL
+    # Guardar en la tabla 'turnos'
+    # Insertar los datos en tu base de datos
+
+    # Ejemplo de respuesta
+    response = {
+        'message': 'Turno guardado exitosamente',
+        'turno': {
+            'especialidad': especialidad,
+            'profesional': profesional,
+            'horario': horario,
+            'sede': sede
+            # Puedes agregar más campos según tu estructura de base de datos
+        }
+    }
+    return jsonify(response), 200

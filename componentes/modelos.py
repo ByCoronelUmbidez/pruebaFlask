@@ -5,6 +5,8 @@ from base_db.config_db import conexion as con
 from auxiliares.cifrado import encriptar
 import hashlib
 import bcrypt
+from flask_login import UserMixin
+
 
 class Profesional(Tabla):
     tabla = 'profesionales'
@@ -14,6 +16,45 @@ class Profesional(Tabla):
     def __init__(self, *args, de_bbdd=False):
         super().crear(args, de_bbdd) # --> no tiene que ser False, queda para que despues tome los datos
         
+    
+    # @classmethod
+    # def obtener_especialidades(cls):
+    #     try:
+    #         consulta = "SELECT DISTINCT especialidad FROM profesionales;"
+    #         resultado = cls.__conectar(consulta)
+    #         especialidades = [row[0] for row in resultado] if resultado else []
+    #         return especialidades
+    #     except Exception as e:
+    #         print(f"Error al obtener especialidades: {e}")
+    #         return []
+
+    @classmethod
+  
+    def obtener_profesionales_por_especialidad(cls, campo=None, valor=None):
+        if campo == 'especialidad':
+            consulta = f"SELECT * FROM {cls.tabla} WHERE especialidad = %s;"
+            resultado = cls.__conectar(consulta, (valor,))
+        else:
+            consulta = f"SELECT * FROM {cls.tabla};"
+            resultado = cls.__conectar(consulta)
+        
+        profesionales = []
+        for res in resultado:
+            profesional = cls(*res)
+            profesionales.append(profesional)
+        
+        return profesionales
+
+    @classmethod
+    def obtener_horarios_por_profesional(cls, id_profesional):
+        try:
+            consulta = "SELECT horario FROM profesionales WHERE id = %s;"
+            return cls.__conectar(consulta, (id_profesional,))
+        except Exception as e:
+            print(f"Error al obtener horarios por profesional: {e}")
+            return []                  
+        
+        
 class Sede(Tabla):
     tabla = 'sedes'
     campos = ('id', 'nombre', 'direccion', 'horario_atencion', 'telefono')
@@ -22,13 +63,22 @@ class Sede(Tabla):
     def __init__(self, *args, de_bbdd=False):
         super().crear(args, de_bbdd)
         
-class ProfesionalSede(Tabla):
-    tabla = 'profesionalsede'
-    campos = ('id_profesional', 'id_sede')
-    conexion = con
+    @classmethod
+    def obtener_sedes(cls):
+        try:
+            consulta = "SELECT id, nombre FROM sedes;"
+            return cls.__conectar(consulta)
+        except Exception as e:
+            print(f"Error al obtener sedes: {e}")
+            return []        
+        
+# class ProfesionalSede(Tabla):
+#     tabla = 'profesionalsede'
+#     campos = ('id_profesional', 'id_sede')
+#     conexion = con
     
-    def __init__(self, *args, de_bbdd=False):
-        super().crear(args, de_bbdd)     
+#     def __init__(self, *args, de_bbdd=False):
+#         super().crear(args, de_bbdd)     
         
 class Contacto(Tabla):
     tabla = 'contacto'
@@ -38,16 +88,8 @@ class Contacto(Tabla):
     def __init__(self, *args, de_bbdd=False):
         super().crear(args, de_bbdd)
         
-class Turno(Tabla):
-    tabla = 'turnos'
-    campos = ('id', 'fecha_hora', 'id_profesional', 'id_sede', 'id_usuario')
-    conexion = con
-    
-    def __init__(self, *args, de_bbdd=False):
-        super().crear(args, de_bbdd)        
-        
 # Clase Usuario
-class Usuario(Tabla):
+class Usuario(Tabla, UserMixin):
     tabla = 'usuarios'
     conexion = con
     campos = ('id', 'username', 'password', 'nombre', 'email', 'id_usuario')
@@ -140,18 +182,59 @@ class Usuario(Tabla):
             # Agrega más campos si es necesario
         }      
         
-class Cuenta(Tabla):
+    @classmethod
+    def obtener(cls, campo=None, valor=None):
+        if campo is None or valor is None:
+            consulta = f"SELECT * FROM {cls.tabla};"
+            resultado = cls.__conectar(consulta)
+        else:
+            consulta = f"SELECT * FROM {cls.tabla} WHERE {campo} = %s;"
+            resultado = cls.__conectar(consulta, (valor,))
+
+        if resultado:
+            return cls(*resultado[0])
+        return None
     
-    tabla = 'cuenta'
+    @classmethod
+    def obtener_por_username(cls, username):
+        consulta = f"SELECT * FROM {cls.tabla} WHERE username = %s;"
+        resultado = cls.__conectar(consulta, (username,))
+        if resultado:
+            return cls(**resultado[0])
+        return None
+
+        
+class Turno(Tabla):
+    tabla = 'turnos'
+    campos = ('id', 'fecha_hora', 'id_profesional', 'id_sede', 'id_usuario')
     conexion = con
-    campos = ('id', 'correo', 'clave')
     
     def __init__(self, *args, de_bbdd=False):
+        super().crear(args, de_bbdd)        
+
+
+    @classmethod
+    def obtener_por_usuario(cls, user_id):
+        consulta = f"SELECT * FROM {cls.tabla} WHERE id_usuario = %s"
+        resultado = cls.__conectar(consulta, (user_id,))
+        return [cls(*fila) for fila in resultado]            
         
-        if not de_bbdd:
-            cuenta = []
-            cuenta.append(args[0])
-            cuenta.append(encriptar(args[1]))
-            super().crear(tuple(cuenta), de_bbdd)
-        else:
-            super().crear(args, de_bbdd)                 
+        
+        
+        
+        
+# class Cuenta(Tabla):
+    
+#     tabla = 'cuenta'
+#     conexion = con
+#     campos = ('id', 'correo', 'clave')
+    
+#     def __init__(self, *args, de_bbdd=False):
+        
+#         if not de_bbdd:
+#             cuenta = []
+#             cuenta.append(args[0])
+#             cuenta.append(encriptar(args[1]))
+#             super().crear(tuple(cuenta), de_bbdd)
+#         else:
+#             super().crear(args, de_bbdd)                 
