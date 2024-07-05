@@ -62,7 +62,7 @@ CREATE TABLE `profesionales` (
 
 LOCK TABLES `profesionales` WRITE;
 /*!40000 ALTER TABLE `profesionales` DISABLE KEYS */;
-INSERT INTO `profesionales` VALUES (1,'Dr. Juan Pérez','Cardiología','Lunes y Miércoles, 9:00-12:00'),(2,'Dra. María García','Odontología','Martes y Jueves, 10:00-14:00'),(3,'Dr. Roberto Martínez','Pediatría','Lunes y Viernes, 8:00-13:00'),(4,'Dra. Laura Rodríguez','Dermatología','Miércoles y Viernes, 14:00-18:00'),(5,'Dr. Carlos Sánchez','Ginecología','Martes y Jueves, 8:00-12:00'),(6,'Dra. Ana López','Oftalmología','Lunes y Miércoles, 10:00-15:00'),(7,'Dr. Manuel González','Ortopedia','Martes y Jueves, 9:00-13:00'),(8,'Dra. Marta Díaz','Psicología','Miércoles y Viernes, 10:00-16:00'),(9,'Dr. Javier Ruiz','Urología','Lunes y Jueves, 8:00-12:00'),(10,'Dra. Patricia Fernández','Endocrinología','Martes y Viernes, 9:00-14:00'),(11,'Dr. Juan Nandez','Pediatria','Lunes y Viernes, 8:00-13:00');
+INSERT INTO `profesionales` VALUES (1,'Dr. Juan Pérez','Cardiología','Lunes 9:00'),(2,'Dra. María García','Odontología','Jueves 10:00'),(3,'Dr. Roberto Martínez','Pediatría','Lunes 8:00'),(4,'Dra. Laura Rodríguez','Dermatología','Viernes 14:00'),(5,'Dr. Carlos Sánchez','Ginecología','Jueves 8:00'),(6,'Dra. Ana López','Oftalmología','Lunes 10:00'),(7,'Dr. Manuel González','Ortopedia','Jueves 9:00'),(8,'Dra. Marta Díaz','Psicología','Viernes 16:00'),(9,'Dr. Javier Ruiz','Urología','Jueves 12:00'),(10,'Dra. Patricia Fernández','Endocrinología','Martes 9:00');
 /*!40000 ALTER TABLE `profesionales` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -146,7 +146,7 @@ CREATE TABLE `usuarios` (
   UNIQUE KEY `username` (`username`),
   KEY `id_usuario` (`id_usuario`),
   CONSTRAINT `usuarios_ibfk_1` FOREIGN KEY (`id_usuario`) REFERENCES `usuarios` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=15 DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -155,7 +155,7 @@ CREATE TABLE `usuarios` (
 
 LOCK TABLES `usuarios` WRITE;
 /*!40000 ALTER TABLE `usuarios` DISABLE KEYS */;
-INSERT INTO `usuarios` VALUES (1,'By','scrypt:32768:8:1$3xJPVFrOHPyPtZRD$c5fce8b025468bff26ddaf91e4dfebfca639bf82a18a220772ec980901a0bef3dd5f73d219e0eec86f3909f592ddef14b4f2bdf467bc02647b515c627d65e941','BCU','bcu@prueba.com',NULL),(2,'Barby','scrypt:32768:8:1$lK7zNp8gnW3uNWab$1b07d72b54bb3589d638924933e3bee93402a58763d0ba6c4bfcf86c773c497951c24751c358bdff021c3c68f020671e881e217e4104682795acbda176517154','Barby CU','bcu2@prueba.com',NULL),(3,'Picco','12430b59ba4966a0106954fdf5e426b1f56a58a9','Piccoro','pico@prueba.com',NULL),(4,'Vegue','$2b$12$rMOdGtrwlY6fcMbkdM.LwuyJ95BsGfWP7h.D5pTXHLOxr5O3Mq1XW','Veguetta','vegue@prueba.com',NULL),(6,'Igna','$2b$12$ZYPGuBfThZrTNvKeTVfN5eAdkfPE1bQ80ofJcaV8Gotr1Li84xKzi','Ignacio','igna@prueba.com',NULL),(7,'Amy','$2b$12$ArKzZKijU.yRMRMISllA4OGk15G8bZ7FU0kr/X3sv8SbeoMT8jJU6','Amy','amy@prueba.com',NULL);
+INSERT INTO `usuarios` VALUES (1,'By','scrypt:32768:8:1$3xJPVFrOHPyPtZRD$c5fce8b025468bff26ddaf91e4dfebfca639bf82a18a220772ec980901a0bef3dd5f73d219e0eec86f3909f592ddef14b4f2bdf467bc02647b515c627d65e941','BCU','bcu@prueba.com',NULL),(3,'Picco','12430b59ba4966a0106954fdf5e426b1f56a58a9','Piccoro','pico@prueba.com',NULL),(4,'Vegue','$2b$12$rMOdGtrwlY6fcMbkdM.LwuyJ95BsGfWP7h.D5pTXHLOxr5O3Mq1XW','Veguetta','vegue@prueba.com',NULL),(7,'Amy','$2b$12$ArKzZKijU.yRMRMISllA4OGk15G8bZ7FU0kr/X3sv8SbeoMT8jJU6','Amy','amy@prueba.com',NULL),(11,'chris','123','christian','prueba@prueba.com',NULL);
 /*!40000 ALTER TABLE `usuarios` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
@@ -168,4 +168,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2024-07-03 16:23:38
+-- Dump completed on 2024-07-05 19:15:32

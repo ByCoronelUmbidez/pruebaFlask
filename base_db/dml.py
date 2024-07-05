@@ -98,7 +98,9 @@ class Tabla:
         
         try:
             cursor = cls.conexion.cursor()
+            print("DDBB conectada")
         except Exception as e:
+            print("DDBB conectada")
             cls.conexion.connect()
             cursor = cls.conexion.cursor()
         

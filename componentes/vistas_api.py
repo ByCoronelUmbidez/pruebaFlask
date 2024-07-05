@@ -13,6 +13,113 @@ from flask_login import logout_user
 from flask_login import current_user
 
 
+@app.route('/', methods=['GET'])
+def listar_rutas():
+    """
+    Lista todas las rutas disponibles en la API.
+
+    Retorna:
+        Un diccionario JSON con las rutas y sus descripciones.
+    """
+    # URL base de la aplicación (ajustar según tu configuración)
+    url_base = "http://localhost:5000"
+
+    rutas = [
+        {
+            "ruta": "/",
+            "descripcion": "Ruta principal de la API.",
+            "url": f"{url_base}/",
+            "metodos": ["GET"],
+        },
+        {
+            "ruta": "/api/profesionales",
+            "descripcion": "Obtiene una lista de profesionales.",
+            "url": f"{url_base}/api/profesionales",
+            "metodos": ["GET"],
+        },
+        {
+            "ruta": "/api/sedes",
+            "descripcion": "Obtiene una lista de sedes.",
+            "url": f"{url_base}/api/sedes",
+            "metodos": ["GET"],
+        },
+        {
+            "ruta": "/api/registro",
+            "descripcion": "Registra un nuevo usuario.",
+            "url": f"{url_base}/api/registro",
+            "metodos": ["POST"],
+        },
+        {
+            "ruta": "/api/login",
+            "descripcion": "Inicia sesión en un usuario existente.",
+            "url": f"{url_base}/api/login",
+            "metodos": ["POST"],
+        },
+        {
+            "ruta": "/api/eliminar_usuario/<int:id>",
+            "descripcion": "Elimina un usuario por su ID.",
+            "url": f"{url_base}/api/eliminar_usuario/1",  # Ejemplo de ID
+            "metodos": ["POST"],
+        },
+        {
+            "ruta": "/api/listar_usuarios",
+            "descripcion": "Obtiene una lista de todos los usuarios.",
+            "url": f"{url_base}/api/listar_usuarios",
+            "metodos": ["GET"],
+        },
+        {
+            "ruta": "/api/perfil",
+            "descripcion": "Obtiene el perfil del usuario actual.",
+            "url": f"{url_base}/api/perfil",
+            "metodos": ["GET"],
+        },
+        {
+            "ruta": "/api/logout",
+            "descripcion": "Cierra la sesión del usuario actual.",
+            "url": f"{url_base}/api/logout",
+            "metodos": ["POST"],
+        },
+        {
+            "ruta": "/api/especialidades",
+            "descripcion": "Obtiene una lista de todas las especialidades disponibles.",
+            "url": f"{url_base}/api/especialidades",
+            "metodos": ["GET"],
+        },
+        {
+            "ruta": "/api/profesionales/<especialidad>",
+            "descripcion": "Obtiene una lista de profesionales por especialidad.",
+            "url": f"{url_base}/api/profesionales/1",  # Ejemplo de especialidad
+            "metodos": ["GET"],
+        },
+        {
+            "ruta": "/api/horarios/<especialidad>",
+            "descripcion": "Obtiene los horarios disponibles por especialidad.",
+            "url": f"{url_base}/api/horarios/1",  # Ejemplo de especialidad
+            "metodos": ["GET"],
+        },
+        {
+            "ruta": "/api/guardar_turno",
+            "descripcion": "Guarda un nuevo turno.",
+            "url": f"{url_base}/api/guardar_turno",
+            "metodos": ["POST"],
+        },
+    ]
+
+    # Crear una respuesta HTML con enlaces clicables
+    html_response = '<ul>'
+    for ruta in rutas:
+        html_response += f'<li><a href="{ruta["url"]}">{ruta["url"]}</a> - {ruta["descripcion"]} (Métodos: {", ".join(ruta["metodos"])})</li>'
+    html_response += '</ul>'
+
+    return html_response
+
+    # Crear una respuesta HTML con enlaces clicables
+    html_response = '<ul>'
+    for ruta in rutas:
+        html_response += f'<li><a href="{ruta["url"]}">{ruta["url"]}</a> - {ruta["descripcion"]} (Métodos: {", ".join(ruta["metodos"])})</li>'
+    html_response += '</ul>'
+
+    return html_response
 
 @app.route('/api/profesionales', methods=['GET'])
 def mostrar_profesionales():
