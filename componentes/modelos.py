@@ -6,7 +6,7 @@ from auxiliares.cifrado import encriptar
 import hashlib
 import bcrypt
 from flask_login import UserMixin
-
+from werkzeug.security import check_password_hash
 
 class Profesional(Tabla):
     tabla = 'profesionales'
@@ -28,8 +28,60 @@ class Profesional(Tabla):
     #         print(f"Error al obtener especialidades: {e}")
     #         return []
 
-    @classmethod
-  
+    # @classmethod
+    # def obtener(cls, campo=None, valor=None):
+    #     if campo is None or valor is None:
+    #         consulta = f"SELECT * FROM {cls.tabla};"
+    #         resultado = cls.__conectar(consulta)
+    #     else:
+    #         consulta = f"SELECT * FROM {cls.tabla} WHERE {campo} = %s;"
+    #         resultado = cls.__conectar(consulta, (valor,))
+
+    #     if resultado:
+    #         return cls(*resultado[0])
+    #     return None
+
+    @classmethod        
+    def __conectar(cls, consulta, datos=None):
+        
+        try:
+            cursor = cls.conexion.cursor()
+        except Exception as e:
+            cls.conexion.connect()
+            cursor = cls.conexion.cursor()
+        
+        if consulta.startswith('SELECT'): # si empieza la consulta con SELECT quiere decir que me va a traer algo de la db. Entonces empiezo a analizar si vienen o no datos.
+            
+            if datos is not None:
+                cursor.execute(consulta, datos)
+            else:
+                cursor.execute(consulta)
+                
+            rta_db = cursor.fetchall()
+            
+            if rta_db != []:
+                resultado = [cls(registro, de_bbdd=True) for registro in rta_db]
+                if len(resultado) == 1:
+                    resultado = resultado[0]
+            else:
+                resultado = False                       
+            
+            cls.conexion.close()
+        
+        else: # Si no hago un SELECT ... 
+            
+            try:
+                # Crud-Update-Delete puede salir mal con esto lo contengo, agarro el error
+                cursor.execute(consulta, datos)
+                cls.conexion.commit()    
+                cls.conexion.close()
+                resultado = True
+            except Exception as e:
+                resultado = False
+            
+        return resultado
+
+    @classmethod  
     def obtener_profesionales_por_especialidad(cls, campo=None, valor=None):
         if campo == 'especialidad':
             consulta = f"SELECT * FROM {cls.tabla} WHERE especialidad = %s;"
@@ -45,15 +97,56 @@ class Profesional(Tabla):
         
         return profesionales
 
-    @classmethod
-    def obtener_horarios_por_profesional(cls, id_profesional):
-        try:
-            consulta = "SELECT horario FROM profesionales WHERE id = %s;"
-            return cls.__conectar(consulta, (id_profesional,))
-        except Exception as e:
-            print(f"Error al obtener horarios por profesional: {e}")
-            return []                  
+    # @classmethod
+    # def obtener_horarios_por_profesional(idProfesional):
+    #     # try:
+    #     #     consulta = "SELECT horario FROM profesionales WHERE id = %s;"
+    #     #     return cls.__conectar(consulta, (id_profesional,))
+    #     # except Exception as e:
+    #     #     print(f"Error al obtener horarios por profesional: {e}")
+    #     #     return []  
+    #     conexion = con
+    #     cursor = conexion.cursor()
+    #     consulta = "SELECT * FROM horarios WHERE id_profesional = %s"
+    #     cursor.execute(consulta, (idProfesional,))
+    #     horarios = cursor.fetchall()
+    #     cursor.close()
+    #     return horarios      
+               
+    @classmethod    
+    def buscar_por_nombre(cls, nombre):
+        # try:
+        #     conexion = con
+        #     cursor = conexion.cursor()
+        #     consulta = "SELECT * FROM profesionales WHERE nombre LIKE %s"
+        #     cursor.execute(consulta, (f'%{nombre}%',))
+        #     results = cursor.fetchone()
+        #     print(results)
+        #     cursor.close()
+        #     return results
+        # except Exception as e:
+        #     print(f"Error al buscar profesionales por nombre: {str(e)}")
+        #     return []   
         
+        try:
+            consulta = "SELECT * FROM profesionales WHERE nombre LIKE %s"
+            resultado = cls.__conectar(consulta, (f'%{nombre}%',))
+
+            if resultado:
+                profesional = Profesional(
+                    id=resultado[0],          # Ajusta los índices según tu estructura de la tabla
+                    nombre=resultado[1],
+                    especialidad=resultado[2],
+                    horario=resultado[3],
+                    # Añade otros campos según sea necesario
+                )
+                return [profesional]  # Devolver una lista con el profesional encontrado
+            else:
+                return []  # Devolver una lista vacía si no se encontró ningún profesional
+        
+        except Exception as e:
+            print(f"Error al buscar profesionales por nombre: {str(e)}")
+            return []
         
 class Sede(Tabla):
     tabla = 'sedes'
@@ -70,15 +163,22 @@ class Sede(Tabla):
             return cls.__conectar(consulta)
         except Exception as e:
             print(f"Error al obtener sedes: {e}")
-            return []        
+            return [] 
         
-# class ProfesionalSede(Tabla):
-#     tabla = 'profesionalsede'
-#     campos = ('id_profesional', 'id_sede')
-#     conexion = con
-    
-#     def __init__(self, *args, de_bbdd=False):
-#         super().crear(args, de_bbdd)     
+    @staticmethod    
+    def buscar_por_nombre(nombre):
+        try:
+            conexion = con
+            cursor = conexion.cursor()
+            consulta = "SELECT * FROM profesionales WHERE nombre LIKE %s"
+            cursor.execute(consulta, (f'%{nombre}%',))
+            results = cursor.fetchall()
+            cursor.close()
+            return results
+        except Exception as e:
+            print(f"Error al buscar profesionales por nombre: {str(e)}")
+            return []     
+                           
         
 class Contacto(Tabla):
     tabla = 'contacto'
@@ -183,7 +283,7 @@ class Usuario(Tabla, UserMixin):
         }      
         
     @classmethod
-    def obtener(cls, campo=None, valor=None):
+    def obtener_usuario(cls, campo=None, valor=None):
         if campo is None or valor is None:
             consulta = f"SELECT * FROM {cls.tabla};"
             resultado = cls.__conectar(consulta)
@@ -203,10 +303,24 @@ class Usuario(Tabla, UserMixin):
             return cls(**resultado[0])
         return None
 
+    @staticmethod
+    def verify_password(stored_password, provided_password):
+        return check_password_hash(stored_password, provided_password)
+
+    @staticmethod
+    def buscar_por_id(user_id):
+        # Aquí debes implementar la lógica para consultar el usuario por ID en la base de datos
+        conexion = con
+        cursor = conexion.cursor()
+        cursor.execute("SELECT * FROM usuarios WHERE id = %s", (user_id,))
+        result = cursor.fetchone()
+        if result:
+            return Usuario(*result)
+        return None
         
 class Turno(Tabla):
     tabla = 'turnos'
-    campos = ('id', 'fecha_hora', 'id_profesional', 'id_sede', 'id_usuario')
+    campos = ('id', 'fecha_hora', 'id_profesional', 'id_sede', 'id_usuario', 'especialidad')
     conexion = con
     
     def __init__(self, *args, de_bbdd=False):
@@ -218,10 +332,7 @@ class Turno(Tabla):
         consulta = f"SELECT * FROM {cls.tabla} WHERE id_usuario = %s"
         resultado = cls.__conectar(consulta, (user_id,))
         return [cls(*fila) for fila in resultado]            
-        
-        
-        
-        
+                                
         
 # class Cuenta(Tabla):
     
