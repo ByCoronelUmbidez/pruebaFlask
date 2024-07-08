@@ -18,22 +18,18 @@ class Tabla:
   
     def guardar_db(self):
         campos_q = str(self.campos[1:]).replace("'", "`")
-        values_q = f"({'%s, ' * (len(self.campos) - 2)} %s)"
-        consulta = (f"INSERT INTO {self.tabla} {campos_q} "
-                    f"VALUES {values_q};")
+        values_q = f"({'%s, ' * (len(self.campos)-2)} %s)"
+        consulta = f"INSERT INTO {self.tabla} {campos_q} VALUES {values_q};"
+        datos = tuple(vars(self).values())
+        print(datos)
+        rta_db = self.__conectar(consulta, datos)
+        print("Consulta ejecutada:", consulta, datos)
+        print(rta_db)
         
-        datos = tuple(getattr(self, campo) for campo in self.campos[1:])  # Excluido el 'id'
-        
-        try:           
-            cursor = self.conexion.cursor()
-            cursor.execute(consulta, datos)
-            self.conexion.commit()
-            cursor.close()
+        if rta_db:
             return 'Creación exitosa.'
-        except Exception as e:
-            self.conexion.rollback()
-            cursor.close()
-            return f"Error al guardar en la base de datos: {str(e)}" 
+        
+        return 'No se pudo crear el registro.'
     
           
     
@@ -114,7 +110,7 @@ class Tabla:
             rta_db = cursor.fetchall()
             
             if rta_db != []:
-                resultado = [cls(registro, de_bbdd=True) for registro in rta_db]
+                resultado = [cls(*registro, de_bbdd=True) for registro in rta_db] # Para profesionales no me sirve *registro
                 if len(resultado) == 1:
                     resultado = resultado[0]
             else:
@@ -134,38 +130,55 @@ class Tabla:
                 resultado = False
             
         return resultado
-    
+ 
+        # try:
+        #     if consulta.startswith('SELECT'): 
+        #         if datos is not None:
+        #             cursor.execute(consulta, datos)
+        #         else:
+        #             cursor.execute(consulta)
+                    
+        #         rta_db = cursor.fetchall()
+                
+        #         if rta_db:
+        #             # Si hay resultados, procesarlos
+        #             resultado = [cls(*registro, de_bbdd=True) for registro in rta_db]
+        #             if len(resultado) == 1:
+        #                 resultado = resultado[0]
+        #         else:
+        #             # Si no hay resultados, retornar False
+        #             resultado = False
+        #     else:
+        #         # Para consultas de inserción (INSERT)
+        #         cursor.execute(consulta, datos)
+        #         cls.conexion.commit()
+        #         resultado = True
+
+        # except Exception as e:
+        #     print("Error de ejecución:", e)
+        #     resultado = False
+
+        # finally:
+        #     cls.conexion.close()
+
+        # return resultado 
+        
     # @classmethod
     # def obtener_para_login(cls, username):
     #     consulta = f"SELECT * FROM {cls.tabla} WHERE username = %s;"
     #     resultado = cls.__conectar(consulta, (username,))
-        
-    #     if resultado:
-    #         if isinstance(resultado, list):
-    #             if len(resultado) == 1:
-    #                 return cls(**resultado[0])  # Devolver un objeto Usuario si es único
-    #             else:
-    #                 return [cls(**item) for item in resultado]  # Devolver una lista de objetos Usuario
+    #     print(resultado)
+
+    #     if resultado is not None:
+    #         if isinstance(resultado, cls):
+    #             # Si resultado es un objeto de la clase Usuario
+    #             usuario = resultado
+    #             usuario.password = usuario.password  # Asignar la contraseña en su formato almacenado
+    #             return usuario
     #         else:
-    #             return cls(**resultado.__dict__)  # Devolver un objeto Usuario si es único
-        
-    #     return None  # Devolver None si no hay resultados
-    
-    @classmethod
-    def obtener_para_login(cls, username):
-        consulta = f"SELECT * FROM {cls.tabla} WHERE username = %s;"
-        resultado = cls.__conectar(consulta, (username,))
+    #             raise ValueError("Tipo de resultado inesperado.")
 
-        if resultado is not None:
-            if isinstance(resultado, cls):
-                # Si resultado es un objeto de la clase Usuario
-                usuario = resultado
-                usuario.password = usuario.password  # Asignar la contraseña en su formato almacenado
-                return usuario
-            else:
-                raise ValueError("Tipo de resultado inesperado.")
-
-        raise ValueError("Usuario no encontrado.")
+    #     raise ValueError("Usuario no encontrado.")
     
     # @classmethod
     # def obtener_para_login(cls, username):
@@ -176,3 +189,6 @@ class Tabla:
     #         if resultado:
     #             return cls(*resultado, de_bbdd=True)
     #         return None    
+
+
+    

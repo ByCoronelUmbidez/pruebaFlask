@@ -28,7 +28,7 @@ def listar_rutas():
         Un diccionario JSON con las rutas y sus descripciones.
     """
     # URL base de la aplicación (ajustar según tu configuración)
-    url_base = "http://localhost:5000"
+    url_base = "http://127.0.0.1:5000"
 
     rutas = [
         {
@@ -94,13 +94,13 @@ def listar_rutas():
         {
             "ruta": "/api/profesionales/<especialidad>",
             "descripcion": "Obtiene una lista de profesionales por especialidad.",
-            "url": f"{url_base}/api/profesionales/1",  # Ejemplo de especialidad
+            "url": f"{url_base}/api/profesionales/odontología",  # Ejemplo de especialidad
             "metodos": ["GET"],
         },
         {
             "ruta": "/api/horarios/<especialidad>",
-            "descripcion": "Obtiene los horarios disponibles por especialidad.",
-            "url": f"{url_base}/api/horarios/1",  # Ejemplo de especialidad
+            "descripcion": "Obtiene los horarios disponibles por id.",
+            "url": f"{url_base}/api/horarios/1",  # Ejemplo de id
             "metodos": ["GET"],
         },
         {
@@ -108,7 +108,13 @@ def listar_rutas():
             "descripcion": "Guarda un nuevo turno.",
             "url": f"{url_base}/api/guardar_turno",
             "metodos": ["POST"],
+        },        {
+            "ruta": "/api/profesionales/nombre/<nombre>",
+            "descripcion": "Obtener ID por nombre de profesional.",
+            "url": f"{url_base}/api/profesionales/nombre/Dra. María García", # Ejemplo de nombre
+            "metodos": ["POST"],
         },
+        
     ]
 
     # Crear una respuesta HTML con enlaces clicables
@@ -122,15 +128,19 @@ def listar_rutas():
 
 @app.route('/api/profesionales', methods=['GET'])
 def mostrar_profesionales():
-    profesionales = Profesional.obtener()
-    dicc_profesionales = [profesional.__dict__ for profesional in profesionales]
-    return jsonify(dicc_profesionales)
+    try:
+        profesionales = Profesional.obtener_profesionales()
+        return jsonify(profesionales)
+    except Exception as e:
+        return jsonify({'error': f"Error al obtener especialidades: {str(e)}"}), 500
     
 @app.route('/api/sedes', methods=['GET'])
 def mostrar_sedes():
-    sedes = Sede.obtener()
-    dicc_sedes = [sede.__dict__ for sede in sedes]
-    return jsonify(dicc_sedes)
+    try:
+        sedes = Sede.obtener_sedes()
+        return jsonify(sedes)
+    except Exception as e:
+        return jsonify({'error': f"Error al obtener especialidades: {str(e)}"}), 500
 
 
 @app.route('/api/registro', methods=['POST'])
@@ -142,19 +152,15 @@ def registro():
         print("Datos incompletos")
         return jsonify({'error': 'Datos incompletos'}), 400
 
-    # Encriptar la contraseña antes de crear el nuevo usuario
-    # password_encriptada = Usuario.encriptar(datos['password'])
-    # print(password_encriptada)
-
     # Crear un nuevo usuario en la base de datos
     nuevo_usuario = Usuario(
-        username=datos['username'],
-        password=datos['password'],
-        nombre=datos['nombre'],
-        email=datos['email']
+        datos['username'],
+        datos['password'],
+        datos['nombre'],
+        datos['email']
     )
     
-    print(f"Contraseña encriptada: {nuevo_usuario.password}")
+    print(nuevo_usuario)
     
     # Guardar el usuario en la base de datos
     resultado = nuevo_usuario.guardar_db()
@@ -181,40 +187,58 @@ def login():
     print("Contraseña proporcionada:", password)
 
     if not username or not password:
-        return jsonify({'mensaje': 'Falta nombre de usuario o contraseña'}), 400
+        return jsonify({'message': 'Falta nombre de usuario o contraseña'}), 400
 
     usuario = Usuario.obtener_para_login(username)
     print(usuario)
-    
-    # ingresada_codificada = Usuario.encriptar(password)
-    # print(ingresada_codificada)
-    
-    if usuario and usuario.password == password:
-        session['user_id'] = usuario.id  # Guardar el ID del usuario en la sesión
-        return jsonify({'message': 'Inicio de sesión exitoso'}), 200
 
+    if usuario:
+        print(f"Contraseña almacenada en la base de datos: {usuario.password}")
+
+        if usuario.password == password:  # Comparar contraseñas como texto plano
+            login_user(usuario)  # Esto debería establecer la sesión del usuario
+            return jsonify({'message': 'Inicio de sesión exitoso'}), 200
+        else:
+            return jsonify({'message': 'Credenciales inválidas'}), 401
     else:
         return jsonify({'message': 'Credenciales inválidas'}), 401
+     
     
-    # if usuario:
-    #     print(f"Contraseña almacenada en la base de datos: {usuario.password}")  # Se imprime la contraseña almacenada (hash) para fines de debug (no se debe mostrar en producción)
+@app.route('/api/perfil', methods=['GET'])
+@login_required
+def perfil():
+    user_id = session.get('user_id')  # Obtén el ID de usuario desde la sesión
+    print(f"ID de usuario obtenido de la sesión: {user_id}")
+    if not user_id:
+        return jsonify({'message': 'Usuario no autenticado'}), 401
+    
+    # Obtener turnos del usuario
+    turnos = Turno.obtener_por_usuario(user_id)
+    jsonify(turnos)
 
+    # Obtener información del usuario
+    usuario = Usuario.obtener_por_usuario(user_id)
+    print("Información del usuario:", usuario)
     
-    #     es_valida = usuario.password == password
-        
-    #     if usuario and Usuario.verify_password(usuario.password, password):
-    #         login_user(usuario)
-    #         return redirect(url_for('seleccionar_turno'))
+    # Prepara la respuesta JSON
+    perfil_data = {
+        'id': usuario['id'],
+        'username': usuario['username'],
+        'nombre': usuario['nombre'],
+        'email': usuario['email'],
+        # 'turnos': jsonify(Turno.obtener_por_usuario(user_id))
+    }
 
-    #     # 3. Revisar errores de sintaxis o lógica
-    #     if es_valida:
-    #         return jsonify({'mensaje': 'Inicio de sesión exitoso'}), 200
-    #     else:
-    #         return jsonify({'mensaje': 'Credenciales inválidas'}), 401
-    # else:
-    #     return jsonify({'mensaje': 'Credenciales inválidas'}), 401
-    
-    
+    return jsonify(perfil_data), 200
+
+
+@app.route('/api/test')
+@login_required
+def test():
+    user_id = session.get('user_id')
+    return jsonify({'user_id': user_id})
+
+
 @app.route('/api/eliminar_usuario/<int:id>', methods=['POST'])
 def eliminar_usuario(id):
     resultado = Usuario.eliminar(id)
@@ -226,6 +250,7 @@ def eliminar_usuario(id):
 @app.route('/api/listar_usuarios', methods=['GET'])
 def listar_usuarios():
     usuarios = Usuario.obtener_todos()  # Método hipotético para obtener todos los usuarios
+    # print(usuarios)
 
     # Convertir los objetos de usuarios a una lista de diccionarios
     usuarios_serializados = [usuario.to_dict() for usuario in usuarios]
@@ -233,92 +258,52 @@ def listar_usuarios():
     return jsonify(usuarios_serializados)
 
 
-@app.route('/api/perfil', methods=['GET'])
-@login_required
-def perfil():
-    user_id = session.get('user_id')
-    if user_id:
-        usuario = Usuario.buscar_por_id(user_id)
-        if usuario:
-            return jsonify({
-                'id': usuario.id,
-                'username': usuario.username,
-                'nombre': usuario.nombre,
-                'email': usuario.email
-            })
-    return jsonify({'message': 'Usuario no encontrado'}), 404
-
-@app.route('/api/logout', methods=['POST'])
-@login_required
-def logout():
-    session.pop('user_id', None)
-    return jsonify({'message': 'Sesión cerrada'}), 200
-
-@app.route('/api/test')
-@login_required
-def test():
-    user_id = session.get('user_id')
-    return jsonify({'user_id': user_id})
-
 # Rutas para obtener datos de la base de datos usando Profesional.obtener
 @app.route('/api/especialidades', methods=['GET'])
 def api_especialidades():
-    profesionales = Profesional.obtener()
-    if not profesionales:
-        return jsonify([])  # Devolver una lista vacía si no hay profesionales
-    especialidades = set()  # Usamos un set para garantizar especialidades únicas
-    for profesional in profesionales:
-        especialidades.add(profesional.especialidad)
-
-    return jsonify(list(especialidades))
+    try:
+        especialidades = Profesional.obtener_especialidades()
+        return jsonify(especialidades)
+    except Exception as e:
+        return jsonify({'error': f"Error al obtener especialidades: {str(e)}"}), 500
 
 
 @app.route('/api/profesionales/<especialidad>', methods=['GET'])
 def api_profesionales_por_especialidad(especialidad):
-    # Obtener todos los profesionales
-    profesionales = Profesional.obtener()
+    try:
+        if especialidad.lower() == 'all':
+            profesionales = Profesional.obtener_profesionales_por_especialidad()
+        else:
+            profesionales = Profesional.obtener_profesionales_por_especialidad(especialidad=especialidad)
 
-    # Filtrar por especialidad si se proporciona una
-    if especialidad != 'all':
-        profesionales_filtrados = [profesional for profesional in profesionales if profesional.especialidad.lower() == especialidad.lower()]
-    else:
-        profesionales_filtrados = profesionales
+        profesionales_json = []
+        for profesional in profesionales:
+            profesional_json = {
+                'id': profesional[0],
+                'nombre': profesional[1]
+            }
+            profesionales_json.append(profesional_json)
 
-    # Preparar la lista de profesionales en formato JSON
-    profesionales_json = []
-    for profesional in profesionales_filtrados:
-        profesional_json = {
-            'nombre': profesional.nombre,
-            # Agrega otros campos necesarios
-        }
-        profesionales_json.append(profesional_json)
+        return jsonify(profesionales_json)
 
-    # Convertir a formato JSON y devolver
-    return jsonify(profesionales_json)
+    except Exception as e:
+        return jsonify({'error': f"Error al obtener profesionales por especialidad: {str(e)}"}), 500
 
 
 @app.route('/api/horarios/<int:profesional_id>', methods=['GET'])
 def api_horarios_por_profesional(profesional_id):
     print(f'ID del profesional recibido en la API: {profesional_id}')
-    profesionales = Profesional.obtener()
+    profesionales = Profesional.obtener_horarios_por_profesional(profesional_id)
+    print(profesionales)
+    profesionales_json = []
+    for profesional in profesionales:
+        profesional_json = {
+            'id': profesional[0],
+            'horario': profesional[3]
+        }
+        profesionales_json.append(profesional_json)
 
-    # Filtrar los profesionales por el ID proporcionado
-    profesionales_filtrados = [profesional for profesional in profesionales if profesional.id == profesional_id]
-
-    # Preparar la lista de horarios en formato JSON
-    horarios_json = []
-    for profesional in profesionales_filtrados:
-        # Si cada profesional tiene solo un horario, obtener ese horario directamente
-            horario_json = {
-                'id': profesional.id,
-                'horario': profesional.horario,
-                # Agrega otros campos necesarios
-            }
-            horarios_json.append(horario_json)
-
-    print(f'Horarios encontrados para {profesional_id}: {horarios_json}')
-    # Convertir a formato JSON y devolver
-    return jsonify(horarios_json)
+    return jsonify(profesionales_json)
 
 
 @app.route('/api/sedes', methods=['GET'])
@@ -330,58 +315,45 @@ def api_sedes():
 @app.route('/api/guardar_turno', methods=['POST'])
 @login_required
 def guardar_turno():
-    id_profesional = request.form.get('id_profesional')
-    id_sede = request.form.get('id_sede')
-    horario = request.form.get('horario')
-    especialidad = request.form.get('especialidad')
+    datos = request.json  # Obtener los datos del cuerpo de la solicitud JSON
+    print('Datos recibidos:', datos)  # Imprimir los datos recibidos para depuración
     
+    # Validar los datos recibidos
+    if not all(key in datos for key in ['id_profesional', 'id_sede', 'horario', 'especialidad']):
+        return jsonify({'error': 'Datos incompletos'}), 400
+
     # Obtener el id_usuario desde la sesión
     id_usuario = session.get('user_id')
-
-    # Convertir el campo horario a un objeto datetime
+    print(id_usuario)
+    
     try:
-        fecha_hora = datetime.strptime(horario, '%Y-%m-%d %H:%M:%S')
-    except ValueError:
-        return jsonify({'error': 'Formato de fecha y hora no válido'}), 400
+        resultado = Turno.guardar_turno(
+            fecha_hora=datos['horario'],
+            id_profesional=int(datos['id_profesional']),
+            id_sede=int(datos['id_sede']),
+            id_usuario=int(id_usuario),
+            especialidad=datos['especialidad']
+        )
 
-    nuevo_turno = Turno(fecha_hora, id_profesional, id_sede, id_usuario, especialidad)
-    resultado = nuevo_turno.guardar_db()
-    
-    if 'Error' in resultado:
-        return jsonify({'error': resultado}), 500
-    
-    return jsonify({'message': 'Turno guardado exitosamente'}), 201
+        if resultado == 'Creación exitosa.':
+            return jsonify({'message': 'Turno guardado exitosamente'}), 201
+        else:
+            return jsonify({'error': resultado}), 500
+
+    except Exception as e:
+        print(f"Error al guardar el turno en la base de datos: {str(e)}")
+        return jsonify({'error': 'Error interno al guardar el turno'}), 500
 
 # Ruta para buscar profesionales por nombre
 @app.route('/api/profesionales/nombre/<nombre>', methods=['GET'])
 def buscar_profesionales(nombre):
-    # if nombre:
-    #     # Realiza la búsqueda en la base de datos
-    #     profesionales = Profesional.buscar_por_nombre(nombre)
-    #     # Formatea los resultados como JSON y devuélvelos
-    #     return jsonify(profesionales)
-    # else:
-    #     return jsonify([])  # Retorna una lista vacía si no se proporcionó nombre
-
-    profesionales = Profesional.obtener()
-
-    # Filtrar por especialidad si se proporciona una
-    if nombre != 'all':
-        profesionales_filtrados = [profesional for profesional in profesionales if profesional.nombre.lower() == nombre.lower()]
+    if nombre:
+        # Realiza la búsqueda en la base de datos
+        profesionales = Profesional.buscar_por_nombre(nombre)
+        # Formatea los resultados como JSON y devuélvelos
+        return jsonify(profesionales)
     else:
-        profesionales_filtrados = profesionales
-
-    # Preparar la lista de profesionales en formato JSON
-    profesionales_json = []
-    for profesional in profesionales_filtrados:
-        profesional_json = {
-            'id': profesional.id,
-            # Agrega otros campos necesarios
-        }
-        profesionales_json.append(profesional_json)
-
-    # Convertir a formato JSON y devolver
-    return jsonify(profesionales_json)   
+        return jsonify([])  # Retorna una lista vacía si no se proporcionó nombre
 
 
 # Ruta para buscar sedes por nombre
@@ -395,3 +367,12 @@ def buscar_sedes():
         return jsonify(sedes)
     else:
         return jsonify([])  # Retorna una lista vacía si no se proporcionó nombre
+    
+
+@app.route('/api/current_user', methods=['GET'])
+def get_current_user():
+    user_id = session.get('user_id')
+    if user_id:
+        return jsonify({'id_usuario': user_id}), 200
+    else:
+        return jsonify({'error': 'Usuario no autenticado'}), 401
