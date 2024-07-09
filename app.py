@@ -8,10 +8,6 @@ from componentes.modelos import Usuario
 app = Flask(__name__)
 app.json.ensure_ascii = False
 cors = CORS(app, resources={r"/*": {"origins": "*"}}, supports_credentials=True)
-# CORS(app) 
-# # CORS(app, resources={r"/api/*": {"origins": "http://127.0.0.1:5500/"}})
-# Configuración CORS para permitir todas las solicitudes desde el origen de tu frontend
-# CORS(app, origins=['http://127.0.0.1:5500'], supports_credentials=True)
 
 app.secret_key = 'admin'
 
@@ -45,12 +41,6 @@ def admin_required(f):
         return f(*args, **kwargs)
     wrapper.__name__ = f.__name__
     return wrapper
-
-@app.route('/api/logout', methods=['POST'])
-@login_required
-def logout():
-    session.pop('user_id', None)
-    return jsonify({'message': 'Sesión cerrada'}), 200
 
 
 # Importar las vistas

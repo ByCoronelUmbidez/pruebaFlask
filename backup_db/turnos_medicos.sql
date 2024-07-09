@@ -117,7 +117,7 @@ CREATE TABLE `turnos` (
   CONSTRAINT `turnos_ibfk_3` FOREIGN KEY (`id_profesional`) REFERENCES `profesionales` (`id`),
   CONSTRAINT `turnos_ibfk_4` FOREIGN KEY (`id_sede`) REFERENCES `sedes` (`id`),
   CONSTRAINT `turnos_ibfk_5` FOREIGN KEY (`id_usuario`) REFERENCES `usuarios` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -126,7 +126,7 @@ CREATE TABLE `turnos` (
 
 LOCK TABLES `turnos` WRITE;
 /*!40000 ALTER TABLE `turnos` DISABLE KEYS */;
-INSERT INTO `turnos` VALUES (1,'Lunes 8:00',3,1,15,'Pediatría');
+INSERT INTO `turnos` VALUES (1,'Lunes 8:00',3,1,15,'Pediatría'),(2,'Lunes 9:00',1,1,15,'Cardiología'),(3,'Lunes 9:00',1,1,1,'Cardiología'),(4,'Viernes 14:00',4,2,1,'Dermatología');
 /*!40000 ALTER TABLE `turnos` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -156,7 +156,7 @@ CREATE TABLE `usuarios` (
 
 LOCK TABLES `usuarios` WRITE;
 /*!40000 ALTER TABLE `usuarios` DISABLE KEYS */;
-INSERT INTO `usuarios` VALUES (1,'By','scrypt:32768:8:1$3xJPVFrOHPyPtZRD$c5fce8b025468bff26ddaf91e4dfebfca639bf82a18a220772ec980901a0bef3dd5f73d219e0eec86f3909f592ddef14b4f2bdf467bc02647b515c627d65e941','BCU','bcu@prueba.com',0),(3,'Picco','12430b59ba4966a0106954fdf5e426b1f56a58a9','Piccoro','pico@prueba.com',0),(4,'Vegue','$2b$12$rMOdGtrwlY6fcMbkdM.LwuyJ95BsGfWP7h.D5pTXHLOxr5O3Mq1XW','Veguetta','vegue@prueba.com',0),(11,'chris','123','christian','prueba@prueba.com',0),(15,'oso','123','oso','oso@prueba.com',NULL);
+INSERT INTO `usuarios` VALUES (1,'By','123','BCU','bcu@prueba.com',0),(3,'Picco','12430b59ba4966a0106954fdf5e426b1f56a58a9','Piccoro','pico@prueba.com',0),(4,'Vegue','$2b$12$rMOdGtrwlY6fcMbkdM.LwuyJ95BsGfWP7h.D5pTXHLOxr5O3Mq1XW','Veguetta','vegue@prueba.com',0),(11,'chris','123','christian','prueba@prueba.com',0),(15,'oso','123','oso','oso@prueba.com',NULL);
 /*!40000 ALTER TABLE `usuarios` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
@@ -169,4 +169,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2024-07-08 10:42:18
+-- Dump completed on 2024-07-09  2:31:38
